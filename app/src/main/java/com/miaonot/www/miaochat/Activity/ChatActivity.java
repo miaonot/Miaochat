@@ -23,6 +23,8 @@ public class ChatActivity extends AppCompatActivity {
 
     final static private int IS_BIND = 0;
 
+    public static Handler handler;
+
     private ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
@@ -52,7 +54,7 @@ public class ChatActivity extends AppCompatActivity {
         Intent intent = new Intent(this, SocketService.class);
         bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
 
-        Handler handler = new Handler() {
+        handler = new Handler() {
 
             @Override
             public void handleMessage(Message message) {

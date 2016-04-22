@@ -11,11 +11,9 @@ import java.net.Socket;
  */
 public class SocketUtil {
 
-    private Socket socket = null;
-
     public boolean bind() {
         try {
-            socket = new Socket("192.168.56.1", 3001);
+            Socket socket = new Socket("192.168.56.1", 3001);
             Log.d("socketUtil", "no exception");
             return true;
         } catch (IOException e) {

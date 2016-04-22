@@ -1,23 +1,18 @@
 package com.miaonot.www.miaochat.Service;
 
 import android.app.Service;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Binder;
-import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 
+import com.miaonot.www.miaochat.Activity.ChatActivity;
 import com.miaonot.www.miaochat.utils.SocketUtil;
 
 public class SocketService extends Service {
 
     final static private int IS_BIND = 0;
     private Message message;
-
-    private Context context = this;
-
-    Handler handler = new Handler();
 
     public class SocketBinder extends Binder {
         public SocketService getService() {
@@ -42,11 +37,11 @@ public class SocketService extends Service {
                 if (flag) {
                     message.what = IS_BIND;
                     message.obj = true;
-                    handler.sendMessage(message);
+                    ChatActivity.handler.sendMessage(message);
                 } else {
                     message.what = IS_BIND;
                     message.obj = false;
-                    handler.sendMessage(message);
+                    ChatActivity.handler.sendMessage(message);
                 }
 
             }
