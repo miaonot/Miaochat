@@ -1,4 +1,4 @@
-package com.miaonot.www.miaochat.Service;
+package com.miaonot.www.miaochat.service;
 
 import android.app.Service;
 import android.content.Intent;
@@ -6,7 +6,7 @@ import android.os.Binder;
 import android.os.IBinder;
 import android.os.Message;
 
-import com.miaonot.www.miaochat.Activity.ChatActivity;
+import com.miaonot.www.miaochat.activity.ChatActivity;
 import com.miaonot.www.miaochat.utils.SocketUtil;
 
 public class SocketService extends Service {

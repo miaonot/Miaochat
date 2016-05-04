@@ -1,4 +1,4 @@
-package com.miaonot.www.miaochat.Activity;
+package com.miaonot.www.miaochat.activity;
 
 import android.content.ComponentName;
 import android.content.Context;
@@ -12,7 +12,7 @@ import android.os.Bundle;
 import android.widget.Toast;
 
 import com.miaonot.www.miaochat.R;
-import com.miaonot.www.miaochat.Service.SocketService;
+import com.miaonot.www.miaochat.service.SocketService;
 
 public class ChatActivity extends AppCompatActivity {
 
