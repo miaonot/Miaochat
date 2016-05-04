@@ -3,11 +3,14 @@
 This project is a practium
 
 ##TODO
-delete the function of socket connect and add a function of sending information
+- Build a database to store user's information
+- Add heartbeat function
 
 ##Version
+- V0.0.3
+	- Add auto sign in function
 - V0.0.2
-	- fix a small bug
+	- Fix a small bug
 
 - V0.0.1
 	- Create the project

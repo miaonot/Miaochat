@@ -1,9 +1,12 @@
 package com.miaonot.www.miaochat.activity;
 
+import android.app.ActivityManager;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
+import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -13,41 +16,47 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import com.miaonot.www.miaochat.R;
+import com.miaonot.www.miaochat.service.SocketService;
+import com.miaonot.www.miaochat.utils.SocketUtil;
+
+import java.io.IOException;
+import java.util.ArrayList;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        SharedPreferences sharedPreferences = getSharedPreferences("user", 0);
-        try {
-            if(sharedPreferences.getString("user_name",null).isEmpty()) {
-                Intent intent = new Intent(this, LoginActivity.class);
-                startActivity(intent);
-            }
-        } catch (NullPointerException e) {
+        boolean isServiceRunning = false;
+
+
+        //make sure user is sign in, if not, turn to the LoginActivity
+        final SharedPreferences sharedPreferences = getSharedPreferences("user", 0);
+
+        if(sharedPreferences.getString("user_name", null) == null) {
+            Log.d("MainAcitivty", "null");
             Intent intent = new Intent(this, LoginActivity.class);
             startActivity(intent);
         }
-
+        if(sharedPreferences.getString("user_name", null) == null) {
+            finish();
+        }
 
         setContentView(R.layout.activity_main);
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
-
-        //new a Intent for ChatActivity
-        final Intent intent = new Intent(this, ChatActivity.class);
 
         FloatingActionButton fab = (FloatingActionButton) findViewById(R.id.fab);
         assert fab != null;
         fab.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                startActivity(intent);
+                startActivity(new Intent(getBaseContext(), ChatActivity.class));
 
             }
         });
@@ -62,6 +71,43 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         assert navigationView != null;
         navigationView.setNavigationItemSelectedListener(this);
+
+        ActivityManager myManager = (ActivityManager) this.getApplicationContext().getSystemService(
+                Context.ACTIVITY_SERVICE);
+        ArrayList<ActivityManager.RunningServiceInfo> runningService = (ArrayList<ActivityManager
+                .RunningServiceInfo>) myManager
+                .getRunningServices(30);
+        for (int i = 0; i < runningService.size(); i++) {
+            if (runningService.get(i).service.getClassName()
+                    .equals("com.miaonot.www.miaochat.service.SocketService")) {
+                Log.i("MainActivity", "service running");
+                isServiceRunning = true;
+            }
+        }
+        if (!isServiceRunning) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try{
+                        SocketUtil.signIn(sharedPreferences.getString("user_name", null), sharedPreferences.getString("user_password", null));
+                    } catch (IOException e) {
+                        Toast.makeText(getBaseContext(), "Connect error", Toast.LENGTH_SHORT).show();
+                        e.printStackTrace();
+                    }
+                }
+            }).start();
+
+            startService(new Intent(this, SocketService.class));
+        }
+        Log.d("MainActivity", "onCreate");
+
+    }
+
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+
+        Log.d("MainActivity", "onDestroy");
     }
 
     @Override
@@ -91,6 +137,12 @@ public class MainActivity extends AppCompatActivity
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+
+            SharedPreferences sharedPreferences = getSharedPreferences("user", 0);
+            SharedPreferences.Editor editor = sharedPreferences.edit();
+            editor.putString("user_name", null);
+            editor.apply();
+            finish();
             return true;
         }
 

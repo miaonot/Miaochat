@@ -5,6 +5,7 @@ import android.content.Intent;
 import android.os.Binder;
 import android.os.IBinder;
 import android.os.Message;
+import android.util.Log;
 
 import com.miaonot.www.miaochat.activity.ChatActivity;
 import com.miaonot.www.miaochat.utils.SocketUtil;
@@ -47,4 +48,17 @@ public class SocketService extends Service {
             }
         }).start();
     }
+
+    @Override
+    public void onCreate() {
+        super.onCreate();
+        Log.d("SocketService", "create");
+    }
+
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        Log.d("SocketService", "destroy");
+    }
+
 }
