@@ -2,35 +2,34 @@ package com.miaonot.www.miaochat.utils;
 
 import android.util.Log;
 
+import com.miaonot.www.miaochat.module.HeartBeat;
+import com.miaonot.www.miaochat.service.SocketService;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * Created by miaonot on 16-4-19.
  */
 public class SocketUtil {
 
-    private static final String ip = "192.168.2.1";
+    private static final String ip = "192.168.43.232";
     private static final int shortPort = 1101;
     private static final int longPort = 1100;
 
+    static final byte CLIENT_SEND_HEART_BEAT = 1;
+    static final byte SERVER_RESPONSE_HEART_BEAT = 2;
     private static final int CLIENT_REQUEST_LOGIN = 11;
+    static final byte CLIENT_SET_LONG_SOCKET = 13;
 
-    public boolean bind() {
-        try {
-            Socket socket = new Socket(ip, longPort);
-            Log.d("socketUtil", "no exception");
-            return true;
-        } catch (IOException e) {
-            Log.d("socketUtil", "exception caught");
-            e.printStackTrace();
-            return false;
-        }
-    }
+    private byte[] lock = new byte[0];
+    private Socket socket = null;
 
     public static boolean signIn(String userId, String mPassword) throws IOException {
         Socket socket = new Socket(ip,shortPort);
@@ -68,6 +67,116 @@ public class SocketUtil {
             return false;
         }
         return true;
+    }
+
+    //心跳任务类
+    class HeartTask extends TimerTask
+    {
+        private Socket socket = null;
+        private byte[] lock = null;
+
+        public HeartTask(Socket socket, byte[] lock)
+        {
+            this.socket = socket;
+            this.lock = lock;
+        }
+
+        //客户端发送心跳报文
+        public void run()
+        {
+            synchronized(lock)
+            {
+                try{
+                    Log.d("Heartbeat", "send");
+                    HeartBeat heart = new HeartBeat();
+                    String msg = "1";
+                    byte[] b = msg.getBytes("UTF-8");
+                    int totalLen = 1 + 4 + b.length;
+                    OutputStream out = socket.getOutputStream();
+                    DataOutputStream outs = new DataOutputStream(out);
+                    //发送心跳
+                    outs.writeByte(CLIENT_SEND_HEART_BEAT);
+                    outs.writeInt(totalLen);
+                    outs.write(b);
+
+                }
+                catch(IOException e){
+                    Log.d("Heartbeat", "connection error");
+                    SocketService.isConnect = false;
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+
+    public SocketUtil(final String msg)
+    {
+        //开启用于接收报文的线程
+        new Thread (new Runnable(){
+            public void run()
+            {
+                try{
+                    socket = new Socket(ip,longPort);
+
+                    //发送客户的信息
+
+                    byte[] b = msg.getBytes("UTF-8");
+                    int totalLen = 1 + 4 + b.length;
+                    OutputStream out = socket.getOutputStream();
+                    DataOutputStream outs = new DataOutputStream(out);
+                    //发送心跳
+                    outs.writeByte(CLIENT_SET_LONG_SOCKET);
+                    outs.writeInt(totalLen);
+                    outs.write(b);
+
+                    //开启心跳
+                    Timer heartTask = new Timer();
+                    heartTask.scheduleAtFixedRate(new HeartTask(socket,lock),0,20000);
+                    Log.d("Heartbeat", "open");
+
+                    InputStream in = socket.getInputStream();
+                    while(true)
+                    {
+                        DataInputStream ins = new DataInputStream(in);
+                        byte type = (byte) ins.read();
+                        totalLen = ins.readInt();
+                        b = new byte[totalLen-4-1];
+                        ins.read(b);
+                        String msg = new String(b,"UTF-8");
+                        findReceiveMsgType(type,msg);
+                    }
+                } catch (IOException e) {
+                    Log.d("Heartbeat", "connection error");
+                    SocketService.isConnect = false;
+                    e.printStackTrace();
+                }
+
+            }
+        }).start();
+    }
+
+    //客户端检验接收报文的类型并调用相应的处理方法
+    private void findReceiveMsgType(byte type, String content)
+    {
+
+        if(type == SERVER_RESPONSE_HEART_BEAT) //服务器回应心跳包
+        {
+            handleServerHeartBeat(content);
+        }
+//        else if (type == SERVER_RECV_MESSAGE) //服务器回应客户发送的聊天记录
+//        {
+//            handleServerResponseChatMessage(content);
+//        }
+//        else if(type == SERVER_SEND_MESSAGE) //服务器发送聊天记录
+//        {
+//            handleServerChatMessage(content);
+//        }
+    }
+
+    //处理服务器的心跳包
+    private void handleServerHeartBeat(String content)
+    {
+        Log.d("Heartbeat", "receive");
     }
 
 }

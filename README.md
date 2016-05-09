@@ -4,9 +4,11 @@ This project is a practium
 
 ##TODO
 - Build a database to store user's information
-- Add heartbeat function
 
 ##Version
+- V0.0.4
+	- Add HeartBeat
+	- Fix the logical of auto sign in
 - V0.0.3
 	- Add auto sign in function
 - V0.0.2

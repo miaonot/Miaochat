@@ -19,19 +19,12 @@ public class ChatActivity extends AppCompatActivity {
     SocketService socketService;
     boolean isBound = false;
 
-    final private Context context = this;
-
-    final static private int IS_BIND = 0;
-
-    public static Handler handler;
-
     private ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             SocketService.SocketBinder binder = (SocketService.SocketBinder) service;
             socketService = binder.getService();
-            isBound = true;
-            socketService.socketBind();
+            //TODO:send message
         }
 
         @Override
@@ -53,21 +46,6 @@ public class ChatActivity extends AppCompatActivity {
         //bind service
         Intent intent = new Intent(this, SocketService.class);
         bindService(intent, serviceConnection, Context.BIND_AUTO_CREATE);
-
-        handler = new Handler() {
-
-            @Override
-            public void handleMessage(Message message) {
-                super.handleMessage(message);
-                if (message.what == IS_BIND) {
-                    if ((boolean)message.obj) {
-                        Toast.makeText(context, "Connect Successful", Toast.LENGTH_SHORT).show();
-                    } else {
-                        Toast.makeText(context, "Connect Failed", Toast.LENGTH_SHORT).show();
-                    }
-                }
-            }
-        };
     }
 
     @Override

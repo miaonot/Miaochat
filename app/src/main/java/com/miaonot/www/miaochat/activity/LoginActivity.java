@@ -191,20 +191,20 @@ public class LoginActivity extends AppCompatActivity {
         protected Boolean doInBackground(Void... params) {
             // TODO: attempt authentication against a network service.
 
-            try {
-                SocketUtil.signIn(userId, mPassword);
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                return false;
-            } catch (IOException e) {
-                e.printStackTrace();
-                existException = true;
-                return false;
-            } catch (Exception e) {
-                existException = true;
-                e.printStackTrace();
-                return false;
-            }
+//            try {
+//                SocketUtil.signIn(userId, mPassword);
+//                Thread.sleep(2000);
+//            } catch (InterruptedException e) {
+//                return false;
+//            } catch (IOException e) {
+//                e.printStackTrace();
+//                existException = true;
+//                return false;
+//            } catch (Exception e) {
+//                existException = true;
+//                e.printStackTrace();
+//                return false;
+//            }
 
             return true;
         }
@@ -221,6 +221,7 @@ public class LoginActivity extends AppCompatActivity {
                 SharedPreferences.Editor editor = sharedPreferences.edit();
                 editor.putString("user_name", userId);
                 editor.putString("user_password", mPassword);
+                editor.putBoolean("is_auto_sign_in", true);
                 editor.apply();
 
                 startActivity(new Intent(getBaseContext(), MainActivity.class));

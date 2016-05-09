@@ -5,6 +5,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
 import android.support.design.widget.FloatingActionButton;
 import android.util.Log;
 import android.view.View;
@@ -28,22 +30,26 @@ import java.util.ArrayList;
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
+    private final int CONNECTION = 0;
+
+    public static Handler handler;
+    private Message message = new Message();
+
     @Override
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
         boolean isServiceRunning = false;
 
-
         //make sure user is sign in, if not, turn to the LoginActivity
         final SharedPreferences sharedPreferences = getSharedPreferences("user", 0);
 
-        if(sharedPreferences.getString("user_name", null) == null) {
-            Log.d("MainAcitivty", "null");
+        if(!sharedPreferences.getBoolean("is_auto_sign_in", false)) {
+            Log.d("MainActivity", "false");
             Intent intent = new Intent(this, LoginActivity.class);
             startActivity(intent);
         }
-        if(sharedPreferences.getString("user_name", null) == null) {
+        if(!sharedPreferences.getBoolean("is_auto_sign_in", false)) {
             finish();
         }
 
@@ -63,7 +69,8 @@ public class MainActivity extends AppCompatActivity
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         ActionBarDrawerToggle toggle = new ActionBarDrawerToggle(
-            this, drawer, toolbar, R.string.navigation_drawer_open, R.string.navigation_drawer_close);
+            this, drawer, toolbar, R.string.navigation_drawer_open,
+                R.string.navigation_drawer_close);
         assert drawer != null;
         drawer.setDrawerListener(toggle);
         toggle.syncState();
@@ -72,33 +79,54 @@ public class MainActivity extends AppCompatActivity
         assert navigationView != null;
         navigationView.setNavigationItemSelectedListener(this);
 
-        ActivityManager myManager = (ActivityManager) this.getApplicationContext().getSystemService(
-                Context.ACTIVITY_SERVICE);
-        ArrayList<ActivityManager.RunningServiceInfo> runningService = (ArrayList<ActivityManager
-                .RunningServiceInfo>) myManager
-                .getRunningServices(30);
-        for (int i = 0; i < runningService.size(); i++) {
-            if (runningService.get(i).service.getClassName()
-                    .equals("com.miaonot.www.miaochat.service.SocketService")) {
-                Log.i("MainActivity", "service running");
-                isServiceRunning = true;
+        if (sharedPreferences.getBoolean("is_auto_sign_in", false)) {
+            //check if service is running to prevent service been killed when the activity is create, if not, sign in again
+            ActivityManager myManager = (ActivityManager) this.getApplicationContext().getSystemService(
+                    Context.ACTIVITY_SERVICE);
+            ArrayList<ActivityManager.RunningServiceInfo> runningService = (ArrayList<ActivityManager
+                    .RunningServiceInfo>) myManager
+                    .getRunningServices(30);
+            for (int i = 0; i < runningService.size(); i++) {
+                if (runningService.get(i).service.getClassName()
+                        .equals("com.miaonot.www.miaochat.service.SocketService")) {
+                    Log.i("MainActivity", "service running");
+                    isServiceRunning = true;
+                }
+            }
+            if (!isServiceRunning) {
+                new Thread(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            SocketUtil.signIn(sharedPreferences.getString("user_name", null),
+                                    sharedPreferences.getString("user_password", null));
+                        } catch (IOException e) {
+                            message.what = CONNECTION;
+                            message.obj = false;
+                            MainActivity.handler.sendMessage(message);
+                            e.printStackTrace();
+                        }
+                    }
+                }).start();
+
+                startService(new Intent(this, SocketService.class));
             }
         }
-        if (!isServiceRunning) {
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try{
-                        SocketUtil.signIn(sharedPreferences.getString("user_name", null), sharedPreferences.getString("user_password", null));
-                    } catch (IOException e) {
-                        Toast.makeText(getBaseContext(), "Connect error", Toast.LENGTH_SHORT).show();
-                        e.printStackTrace();
+
+        handler = new Handler() {
+            @Override
+            public void handleMessage(Message message) {
+                super.handleMessage(message);
+                if (message.what == CONNECTION) {
+                    if (message.obj.equals(false)) {
+                        Toast.makeText(getBaseContext(),"Connection error",
+                                Toast.LENGTH_SHORT).show();
+                        startActivity(new Intent(getBaseContext(), LoginActivity.class));
                     }
                 }
-            }).start();
+            }
+        };
 
-            startService(new Intent(this, SocketService.class));
-        }
         Log.d("MainActivity", "onCreate");
 
     }
@@ -136,11 +164,11 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
+        if (id == R.id.sign_out) {
 
             SharedPreferences sharedPreferences = getSharedPreferences("user", 0);
             SharedPreferences.Editor editor = sharedPreferences.edit();
-            editor.putString("user_name", null);
+            editor.putBoolean("is_auto_sign_in",false);
             editor.apply();
             finish();
             return true;
