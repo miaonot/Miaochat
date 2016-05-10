@@ -31,6 +31,7 @@ public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
     private final int CONNECTION = 0;
+    private final int ACCOUNT = 1;
 
     public static Handler handler;
     private Message message = new Message();
@@ -47,7 +48,7 @@ public class MainActivity extends AppCompatActivity
         if(!sharedPreferences.getBoolean("is_auto_sign_in", false)) {
             Log.d("MainActivity", "false");
             Intent intent = new Intent(this, LoginActivity.class);
-            startActivity(intent);
+            startActivityForResult(intent, 0);
         }
         if(!sharedPreferences.getBoolean("is_auto_sign_in", false)) {
             finish();
@@ -98,8 +99,12 @@ public class MainActivity extends AppCompatActivity
                     @Override
                     public void run() {
                         try {
-                            SocketUtil.signIn(sharedPreferences.getString("user_name", null),
-                                    sharedPreferences.getString("user_password", null));
+                            if (!SocketUtil.signIn(sharedPreferences.getString("user_name", null),
+                                    sharedPreferences.getString("user_password", null))) {
+                                message.what = ACCOUNT;
+                                message.obj = false;
+                                MainActivity.handler.sendMessage(message);
+                            }
                         } catch (IOException e) {
                             message.what = CONNECTION;
                             message.obj = false;
@@ -119,9 +124,17 @@ public class MainActivity extends AppCompatActivity
                 super.handleMessage(message);
                 if (message.what == CONNECTION) {
                     if (message.obj.equals(false)) {
-                        Toast.makeText(getBaseContext(),"Connection error",
+                        Toast.makeText(getBaseContext(), "Connection error",
                                 Toast.LENGTH_SHORT).show();
-                        startActivity(new Intent(getBaseContext(), LoginActivity.class));
+                        stopService(new Intent(getBaseContext(), SocketService.class));
+                        startActivityForResult(new Intent(getBaseContext(), LoginActivity.class), 0);
+                    }
+                } else if (message.what == ACCOUNT) {
+                    if (message.obj.equals(false)) {
+                        Toast.makeText(getBaseContext(), "Account error",
+                                Toast.LENGTH_SHORT).show();
+                        stopService(new Intent(getBaseContext(), SocketService.class));
+                        startActivityForResult(new Intent(getBaseContext(), LoginActivity.class), 0);
                     }
                 }
             }
@@ -170,6 +183,7 @@ public class MainActivity extends AppCompatActivity
             SharedPreferences.Editor editor = sharedPreferences.edit();
             editor.putBoolean("is_auto_sign_in",false);
             editor.apply();
+            stopService(new Intent(this, SocketService.class));
             finish();
             return true;
         }
@@ -184,8 +198,9 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
 
         if (id == R.id.nav_chat) {
-            Intent intent = new Intent();
-            startActivity(intent);
+            if (!this.equals(MainActivity.class)) {
+                startActivity(new Intent(this, MainActivity.class));
+            }
         } else if (id == R.id.nav_gallery) {
 
         } else if (id == R.id.nav_slideshow) {
@@ -203,4 +218,12 @@ public class MainActivity extends AppCompatActivity
         drawer.closeDrawer(GravityCompat.START);
         return true;
     }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (resultCode == 0) {
+            finish();
+        }
+    }
+
 }

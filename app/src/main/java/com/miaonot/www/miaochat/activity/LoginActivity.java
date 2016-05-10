@@ -47,6 +47,9 @@ public class LoginActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
+
+        Intent intent = new Intent();
+        setResult(0, intent);
         // Set up the login form.
         mNumberView = (EditText) findViewById(R.id.user_id);
         mPasswordView = (EditText) findViewById(R.id.password);

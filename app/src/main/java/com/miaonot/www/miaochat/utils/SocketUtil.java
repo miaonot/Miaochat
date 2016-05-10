@@ -7,6 +7,7 @@ import com.miaonot.www.miaochat.service.SocketService;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -19,7 +20,7 @@ import java.util.TimerTask;
  */
 public class SocketUtil {
 
-    private static final String ip = "192.168.43.232";
+    private static final String ip = "192.168.2.1";
     private static final int shortPort = 1101;
     private static final int longPort = 1100;
 
@@ -43,27 +44,27 @@ public class SocketUtil {
         outs.writeByte(CLIENT_REQUEST_LOGIN);
         outs.writeInt(totalLen);
         outs.write(b);
-        Log.d("Sign up", "send successful");
+        Log.d("Sign in", "send successful");
 
 
         //接收登录情况
         InputStream in = socket.getInputStream();
         DataInputStream ins = new DataInputStream(in);
-        Log.d("Sign up", "get successful");
+        Log.d("Sign in", "get successful");
         byte temp = (byte) ins.read();
-        Log.d("Sign up", temp + "");
+        Log.d("Sign in", temp + "");
         totalLen = ins.readInt();
-        Log.d("Sign up", "type read successful");
+        Log.d("Sign in", "type read successful");
         b = new byte[totalLen-4-1];
         ins.read(b);
-        Log.d("Sign up", "Sign up state read successful");
-        Log.d("Sign up", b[0] + "");
+        Log.d("Sign in", "Sign up state read successful");
+        Log.d("Sign in", b[0] + "");
 
         if(b[0] == 1) {
             socket.close();
-            Log.d("Sign up", "socket closed");
+            Log.d("Sign in", "socket closed");
         } else {
-            Log.d("Sign up", "account error");
+            Log.d("Sign in", "account error");
             return false;
         }
         return true;
@@ -115,8 +116,8 @@ public class SocketUtil {
         new Thread (new Runnable(){
             public void run()
             {
-                try{
-                    socket = new Socket(ip,longPort);
+                try {
+                    socket = new Socket(ip, longPort);
 
                     //发送客户的信息
 
@@ -131,20 +132,22 @@ public class SocketUtil {
 
                     //开启心跳
                     Timer heartTask = new Timer();
-                    heartTask.scheduleAtFixedRate(new HeartTask(socket,lock),0,20000);
+                    heartTask.scheduleAtFixedRate(new HeartTask(socket, lock), 0, 20000);
                     Log.d("Heartbeat", "open");
 
                     InputStream in = socket.getInputStream();
-                    while(true)
-                    {
+                    while (true) {
                         DataInputStream ins = new DataInputStream(in);
                         byte type = (byte) ins.read();
                         totalLen = ins.readInt();
-                        b = new byte[totalLen-4-1];
+                        b = new byte[totalLen - 4 - 1];
                         ins.read(b);
-                        String msg = new String(b,"UTF-8");
-                        findReceiveMsgType(type,msg);
+                        String msg = new String(b, "UTF-8");
+                        findReceiveMsgType(type, msg);
                     }
+                } catch (EOFException e) {
+                    Log.d("Heartbeat", "EOFException");
+                    e.printStackTrace();
                 } catch (IOException e) {
                     Log.d("Heartbeat", "connection error");
                     SocketService.isConnect = false;
