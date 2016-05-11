@@ -2,6 +2,7 @@ package com.miaonot.www.miaochat.utils;
 
 import android.util.Log;
 
+import com.miaonot.www.miaochat.module.Friend;
 import com.miaonot.www.miaochat.module.HeartBeat;
 import com.miaonot.www.miaochat.service.SocketService;
 
@@ -12,6 +13,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.net.UnknownHostException;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -26,6 +28,8 @@ public class SocketUtil {
 
     static final byte CLIENT_SEND_HEART_BEAT = 1;
     static final byte SERVER_RESPONSE_HEART_BEAT = 2;
+    static final byte CLIENT_REQUEST_FRIENDS = 7;
+    static final byte SERVER_RESPONSE_FRIENDS = 8;
     private static final int CLIENT_REQUEST_LOGIN = 11;
     static final byte CLIENT_SET_LONG_SOCKET = 13;
 
@@ -68,6 +72,51 @@ public class SocketUtil {
             return false;
         }
         return true;
+    }
+
+    public static Friend[] requestFriends(String userid) {
+        Friend[] friends = null;
+        try {
+            Socket socket = new Socket(ip,shortPort);
+            byte[] b = userid.getBytes("UTF-8");
+            int totalLen = 1 + 4 + b.length;
+            OutputStream out = socket.getOutputStream();
+            DataOutputStream outs = new DataOutputStream(out);
+            //发送请求
+            outs.writeByte(CLIENT_REQUEST_FRIENDS);
+            outs.writeInt(totalLen);
+            outs.write(b);
+
+            //接收好友列表
+            InputStream in = socket.getInputStream();
+            DataInputStream ins = new DataInputStream(in);
+            byte type = (byte) ins.read();
+            totalLen = ins.readInt();
+            b = new byte[totalLen-4-1];
+            ins.read(b);
+            String msg = new String(b,"UTF-8");
+            String[] friendsinfo = msg.split("\n");
+
+
+            //生成好友的类数组
+            int friendsNr = (friendsinfo.length)/2;
+            friends = new Friend[friendsNr];
+            for(int i=0; i<friendsNr; i++)
+            {
+                friends[i] = new Friend(friendsinfo[i*2],friendsinfo[i*2+1]);
+            }
+
+
+            //关闭socket
+            socket.close();
+
+
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
+
+        return friends;
     }
 
     //心跳任务类

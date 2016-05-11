@@ -3,9 +3,11 @@
 This project is a practium
 
 ##TODO
-- Build a database to store user's information
+- Update the UI
 
 ##Version
+- V0.0.5
+    - Add function to get friend list
 - V0.0.4
 	- Add HeartBeat
 	- Fix the logical of auto sign in
@@ -13,7 +15,6 @@ This project is a practium
 	- Add auto sign in function
 - V0.0.2
 	- Fix a small bug
-
 - V0.0.1
 	- Create the project
 	- Add a default MainActivity
