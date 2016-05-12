@@ -11,7 +11,6 @@ import android.support.design.widget.FloatingActionButton;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
-import android.view.LayoutInflater;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -21,14 +20,16 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.miaonot.www.miaochat.activity.adapter.MyAdapter;
 import com.miaonot.www.miaochat.R;
 import com.miaonot.www.miaochat.module.Friend;
 import com.miaonot.www.miaochat.service.SocketService;
 import com.miaonot.www.miaochat.utils.SocketUtil;
+
+import org.w3c.dom.Text;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -45,6 +46,8 @@ public class MainActivity extends AppCompatActivity
     private RecyclerView recyclerView;
     private RecyclerView.Adapter Adapter;
     private RecyclerView.LayoutManager layoutManager;
+
+    private TextView textView;
     private String[] myDataset;
 
     protected void onCreate(final Bundle savedInstanceState) {
@@ -54,6 +57,7 @@ public class MainActivity extends AppCompatActivity
 
         //make sure user is sign in, if not, turn to the LoginActivity
         final SharedPreferences sharedPreferences = getSharedPreferences("user", 0);
+//        final SharedPreferences.Editor editor = sharedPreferences.edit();
 
         if(!sharedPreferences.getBoolean("is_auto_sign_in", false)) {
             Log.d("MainActivity", "false");
@@ -66,11 +70,11 @@ public class MainActivity extends AppCompatActivity
 
         if (sharedPreferences.getBoolean("is_auto_sign_in", false)) {
             //check if service is running to prevent service been killed when the activity is create, if not, sign in again
-            ActivityManager myManager = (ActivityManager) this.getApplicationContext().getSystemService(
-                    Context.ACTIVITY_SERVICE);
-            ArrayList<ActivityManager.RunningServiceInfo> runningService = (ArrayList<ActivityManager
-                    .RunningServiceInfo>) myManager
-                    .getRunningServices(30);
+            ActivityManager myManager = (ActivityManager) this.getApplicationContext().
+                    getSystemService(Context.ACTIVITY_SERVICE);
+            ArrayList<ActivityManager.RunningServiceInfo> runningService =
+                    (ArrayList<ActivityManager.RunningServiceInfo>) myManager
+                            .getRunningServices(30);
             for (int i = 0; i < runningService.size(); i++) {
                 if (runningService.get(i).service.getClassName()
                         .equals("com.miaonot.www.miaochat.service.SocketService")) {
@@ -107,12 +111,15 @@ public class MainActivity extends AppCompatActivity
             public void run() {
                 Friend[] friends = SocketUtil.requestFriends(sharedPreferences.
                         getString("user_name", null));
+//                editor.putInt("friend_num", friends.length);
                 Log.d("Friend", friends.length + "");
                 myDataset = new String[friends.length];
                 for (int i = 0; i < friends.length; i++) {
                     myDataset[i] = friends[i].getNickname();
+//                    editor.putString("friend" + i, friends[i].getNickname());
                     Log.d("Friend", friends[i].getNickname());
                 }
+//                editor.apply();
             }
         }).start();
 
@@ -130,7 +137,10 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
+        textView = (TextView) findViewById(R.id.app_name);
+
         recyclerView = (RecyclerView) findViewById(R.id.my_recycler_view);
+        recyclerView.setVisibility(View.INVISIBLE);
 
         // use this setting to improve performance if you know that changes
         // in content do not change the layout size of the RecyclerView
@@ -237,9 +247,11 @@ public class MainActivity extends AppCompatActivity
         int id = item.getItemId();
 
         if (id == R.id.nav_chat) {
-
-        } else if (id == R.id.nav_gallery) {
-
+            textView.setVisibility(View.VISIBLE);
+            recyclerView.setVisibility(View.INVISIBLE);
+        } else if (id == R.id.nav_friend) {
+            recyclerView.setVisibility(View.VISIBLE);
+            textView.setVisibility(View.INVISIBLE);
         } else if (id == R.id.nav_slideshow) {
 
         } else if (id == R.id.nav_manage) {
@@ -263,53 +275,4 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-}
-
-class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
-    private String[] mDataset;
-
-    // Provide a reference to the views for each data item
-    // Complex data items may need more than one view per item, and
-    // you provide access to all the views for a data item in a view holder
-    public static class ViewHolder extends RecyclerView.ViewHolder {
-        // each data item is just a string in this case
-        public TextView mTextView;
-        public ViewHolder(TextView v) {
-            super(v);
-            mTextView = v;
-        }
-    }
-
-    // Provide a suitable constructor (depends on the kind of dataset)
-    public MyAdapter(String[] myDataset) {
-        mDataset = myDataset;
-    }
-
-    // Create new views (invoked by the layout manager)
-    @Override
-    public MyAdapter.ViewHolder onCreateViewHolder(ViewGroup parent,
-                                                   int viewType) {
-        // create a new view
-        View v = LayoutInflater.from(parent.getContext())
-                .inflate(R.layout.text_view, parent, false);
-        // set the view's size, margins, paddings and layout parameters
-        //TODO
-        ViewHolder vh = new ViewHolder((TextView) v);
-        return vh;
-    }
-
-    // Replace the contents of a view (invoked by the layout manager)
-    @Override
-    public void onBindViewHolder(ViewHolder holder, int position) {
-        // - get element from your dataset at this position
-        // - replace the contents of the view with that element
-        holder.mTextView.setText(mDataset[position]);
-
-    }
-
-    // Return the size of your dataset (invoked by the layout manager)
-    @Override
-    public int getItemCount() {
-        return mDataset.length;
-    }
 }
