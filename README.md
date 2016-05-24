@@ -6,6 +6,8 @@ This project is a practium
 - Update the UI
 
 ##Version
+- V0.0.6
+	- Use database istead of file to store data
 - V0.0.5
     - Add function to get friend list
 - V0.0.4

@@ -22,7 +22,7 @@ import java.util.TimerTask;
  */
 public class SocketUtil {
 
-    private static final String ip = "192.168.2.1";
+    private static final String ip = "192.168.43.232";
     private static final int shortPort = 1101;
     private static final int longPort = 1100;
 
@@ -111,6 +111,8 @@ public class SocketUtil {
             socket.close();
 
 
+        } catch (EOFException e) {
+            e.printStackTrace();
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

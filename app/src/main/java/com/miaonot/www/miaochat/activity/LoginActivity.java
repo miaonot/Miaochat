@@ -3,8 +3,10 @@ package com.miaonot.www.miaochat.activity;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.annotation.TargetApi;
+import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.sqlite.SQLiteDatabase;
 import android.support.v7.app.AppCompatActivity;
 
 import android.os.AsyncTask;
@@ -23,6 +25,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.miaonot.www.miaochat.R;
+import com.miaonot.www.miaochat.database.DatabaseHelper;
 import com.miaonot.www.miaochat.utils.SocketUtil;
 
 import java.io.IOException;
@@ -220,12 +223,25 @@ public class LoginActivity extends AppCompatActivity {
             if (success) {
                 Log.i("sign in", "success");
 
-                SharedPreferences sharedPreferences = getSharedPreferences("user", 0);
-                SharedPreferences.Editor editor = sharedPreferences.edit();
-                editor.putString("user_name", userId);
-                editor.putString("user_password", mPassword);
-                editor.putBoolean("is_auto_sign_in", true);
-                editor.apply();
+//                SharedPreferences sharedPreferences = getSharedPreferences("user", 0);
+//                SharedPreferences.Editor editor = sharedPreferences.edit();
+//                editor.putString("user_name", userId);
+//                editor.putString("user_password", mPassword);
+//                editor.putBoolean("is_auto_sign_in", true);
+//                editor.apply();
+                DatabaseHelper databaseHelper = new DatabaseHelper(getBaseContext(), "miaochat.db", null, 1);
+                SQLiteDatabase db = databaseHelper.getWritableDatabase();
+                ContentValues values = new ContentValues();
+                if (db.query("user", new String[] {"user_id"}, "user_id = ?", new String[] {userId},
+                        null, null, null).moveToFirst()) {
+                    values.put("password", mPassword);
+                    db.update("user", values, "user_id = ?", new String[] {userId});
+                } else {
+                    values.put("is_auto_sign_in", 1);
+                    values.put("user_id", userId);
+                    values.put("password", mPassword);
+                    db.insert("user", null, values);
+                }
 
                 startActivity(new Intent(getBaseContext(), MainActivity.class));
                 finish();

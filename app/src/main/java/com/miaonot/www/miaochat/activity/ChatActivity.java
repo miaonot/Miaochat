@@ -19,6 +19,9 @@ public class ChatActivity extends AppCompatActivity {
     SocketService socketService;
     boolean isBound = false;
 
+    //Friend id
+    String id;
+
     private ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
@@ -37,6 +40,8 @@ public class ChatActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
+
+        id = getIntent().getAction();
     }
 
     @Override

@@ -21,4 +21,7 @@
         completions."
     </string>
     <string name="title_activity_friend">FriendActivity</string>
+
+    <!-- String related to chat -->
+    <string name="send">send</string>
 </resources>

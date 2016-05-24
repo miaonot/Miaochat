@@ -3,6 +3,8 @@ package com.miaonot.www.miaochat.service;
 import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
@@ -11,6 +13,7 @@ import android.util.Log;
 
 import com.miaonot.www.miaochat.activity.ChatActivity;
 import com.miaonot.www.miaochat.activity.MainActivity;
+import com.miaonot.www.miaochat.database.DatabaseHelper;
 import com.miaonot.www.miaochat.utils.SocketUtil;
 
 public class SocketService extends Service {
@@ -39,9 +42,17 @@ public class SocketService extends Service {
         super.onCreate();
         Log.d("SocketService", "create");
 
-        SharedPreferences sharedPreferences = getSharedPreferences("user",0);
-        String msg = sharedPreferences.getString("user_name",null);
-        SocketUtil socketUtil = new SocketUtil(msg);
+//        SharedPreferences sharedPreferences = getSharedPreferences("user",0);
+//        String msg = sharedPreferences.getString("user_name",null);
+        DatabaseHelper databaseHelper = new DatabaseHelper(this, "miaochat.db", null, 1);
+        SQLiteDatabase db = databaseHelper.getReadableDatabase();
+        Cursor cursor = db.query("user", null, null, null, null, null, null);
+        String msg;
+        if (cursor.moveToFirst()) {
+            msg = cursor.getString(cursor.getColumnIndex("user_id"));
+        }
+        else msg = "0";
+        new SocketUtil(msg);
         Log.d("SocketService", isConnect + "");
         new Thread(new Runnable() {
             @Override
