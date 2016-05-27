@@ -14,12 +14,17 @@ import android.util.Log;
 import com.miaonot.www.miaochat.activity.ChatActivity;
 import com.miaonot.www.miaochat.activity.MainActivity;
 import com.miaonot.www.miaochat.database.DatabaseHelper;
+import com.miaonot.www.miaochat.module.ChatMessage;
 import com.miaonot.www.miaochat.utils.SocketUtil;
 
 public class SocketService extends Service {
 
     private static final int CONNECTION = 0;
     private Message message = new Message();
+
+    private final IBinder mBinder = new SocketBinder();
+
+    private SocketUtil socketUtil;
 
     //the flag of the connection, if the connection error, end stop the service
     //this way is not good and safe, if having time, change it to broadcast
@@ -33,8 +38,7 @@ public class SocketService extends Service {
 
     @Override
     public IBinder onBind(Intent intent) {
-        //TODO:send message here
-        return null;
+        return mBinder;
     }
 
     @Override
@@ -52,7 +56,7 @@ public class SocketService extends Service {
             msg = cursor.getString(cursor.getColumnIndex("user_id"));
         }
         else msg = "0";
-        new SocketUtil(msg);
+        socketUtil = new SocketUtil(msg);
         Log.d("SocketService", isConnect + "");
         new Thread(new Runnable() {
             @Override
@@ -71,6 +75,10 @@ public class SocketService extends Service {
     public void onDestroy() {
         super.onDestroy();
         Log.d("SocketService", "destroy");
+    }
+
+    public void sendMessage(ChatMessage message) {
+        socketUtil.sendChatMessage(message);
     }
 
 }

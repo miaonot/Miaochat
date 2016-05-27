@@ -88,6 +88,7 @@ public class MainActivity extends AppCompatActivity
             userId = null;
             password = null;
         }
+        Log.d("MainActivity", userId + password);
 
         //make sure user is sign in, if not, turn to the LoginActivity
 //        final SharedPreferences sharedPreferences = getSharedPreferences("user", 0);

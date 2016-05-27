@@ -2,6 +2,7 @@ package com.miaonot.www.miaochat.utils;
 
 import android.util.Log;
 
+import com.miaonot.www.miaochat.module.ChatMessage;
 import com.miaonot.www.miaochat.module.Friend;
 import com.miaonot.www.miaochat.module.HeartBeat;
 import com.miaonot.www.miaochat.service.SocketService;
@@ -28,6 +29,7 @@ public class SocketUtil {
 
     static final byte CLIENT_SEND_HEART_BEAT = 1;
     static final byte SERVER_RESPONSE_HEART_BEAT = 2;
+    static final byte CLIENT_SEND_MESSAGE = 3;
     static final byte CLIENT_REQUEST_FRIENDS = 7;
     static final byte SERVER_RESPONSE_FRIENDS = 8;
     private static final int CLIENT_REQUEST_LOGIN = 11;
@@ -207,6 +209,29 @@ public class SocketUtil {
 
             }
         }).start();
+    }
+
+    public void sendChatMessage(ChatMessage message)
+    {
+        synchronized(lock)
+        {
+            try{
+                //MessageType.clientSendMsg.add(message);
+                String msg = message.getMessage();
+                byte[] b = msg.getBytes("UTF-8");
+                int totalLen = 1 + 4 + b.length;
+                OutputStream out = socket.getOutputStream();
+                DataOutputStream outs = new DataOutputStream(out);
+                //发送心跳
+                outs.writeByte(CLIENT_SEND_MESSAGE);
+                outs.writeInt(totalLen);
+                outs.write(b);
+
+            }
+            catch(IOException e){
+
+            }
+        }
     }
 
     //客户端检验接收报文的类型并调用相应的处理方法

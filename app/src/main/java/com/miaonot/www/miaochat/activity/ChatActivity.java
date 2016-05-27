@@ -4,14 +4,19 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
-import android.os.Handler;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
 import android.os.IBinder;
-import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.widget.Toast;
+import android.util.Log;
+import android.view.View;
+import android.widget.Button;
+import android.widget.TextView;
 
 import com.miaonot.www.miaochat.R;
+import com.miaonot.www.miaochat.database.DatabaseHelper;
+import com.miaonot.www.miaochat.module.ChatMessage;
 import com.miaonot.www.miaochat.service.SocketService;
 
 public class ChatActivity extends AppCompatActivity {
@@ -22,12 +27,16 @@ public class ChatActivity extends AppCompatActivity {
     //Friend id
     String id;
 
+    //UI
+    Button sendButton;
+    TextView textView;
+
     private ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
             SocketService.SocketBinder binder = (SocketService.SocketBinder) service;
             socketService = binder.getService();
-            //TODO:send message
+            isBound = true;
         }
 
         @Override
@@ -41,7 +50,29 @@ public class ChatActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_chat);
 
+        sendButton = (Button) findViewById(R.id.send_chat);
+        textView = (TextView) findViewById(R.id.send_text);
+
         id = getIntent().getAction();
+        sendButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String text = textView.getText().toString();
+                textView.setText("");
+                DatabaseHelper databaseHelper = new DatabaseHelper(v.getContext(), "miaochat.db", null, 1);
+                SQLiteDatabase db = databaseHelper.getReadableDatabase();
+                Cursor cursor = db.query("user", null, null, null, null, null, null);
+                String userId;
+                if (cursor.moveToFirst()) {
+                    userId = cursor.getString(cursor.getColumnIndex("user_id"));
+                } else {
+                    userId = null;
+                }
+                ChatMessage chatMessage = new ChatMessage(userId, id, text);
+                Log.d("chatMessage", userId + id + text);
+                socketService.sendMessage(chatMessage);
+            }
+        });
     }
 
     @Override
@@ -58,7 +89,9 @@ public class ChatActivity extends AppCompatActivity {
         super.onStop();
 
         //unbind service
-        unbindService(serviceConnection);
+        if (isBound) {
+            unbindService(serviceConnection);
+        }
     }
 
     @Override
