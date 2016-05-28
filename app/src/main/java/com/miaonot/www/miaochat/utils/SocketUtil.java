@@ -23,7 +23,7 @@ import java.util.TimerTask;
  */
 public class SocketUtil {
 
-    private static final String ip = "192.168.43.232";
+    private static final String ip = "192.168.2.1";
     private static final int shortPort = 1101;
     private static final int longPort = 1100;
 
