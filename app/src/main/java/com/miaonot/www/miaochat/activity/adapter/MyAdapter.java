@@ -73,6 +73,7 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
     // Replace the contents of a view (invoked by the layout manager)
     @Override
     public void onBindViewHolder(final ViewHolder holder, int position) {
+        holder.setIsRecyclable(false);
         // - get element from dataset at this position
         if (type.equals("friend")) {
             holder.mTextView.setText(friends.get(position).getNickname());
@@ -93,7 +94,7 @@ public class MyAdapter extends RecyclerView.Adapter<MyAdapter.ViewHolder> {
                 holder.getTextView.setVisibility(View.INVISIBLE);
             } else {
                 holder.getTextView.setText(chatMessages.get(position).getContent());
-                holder.sendTextView.setVisibility(View.VISIBLE);
+                holder.sendTextView.setVisibility(View.INVISIBLE);
             }
         }
     }

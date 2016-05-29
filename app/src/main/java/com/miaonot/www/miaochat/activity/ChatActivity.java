@@ -1,5 +1,7 @@
 package com.miaonot.www.miaochat.activity;
 
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.ComponentName;
 import android.content.ContentValues;
 import android.content.Context;
@@ -7,9 +9,12 @@ import android.content.Intent;
 import android.content.ServiceConnection;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.app.NotificationCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -41,6 +46,8 @@ public class ChatActivity extends AppCompatActivity {
     private MyAdapter adapter;
     private RecyclerView.LayoutManager layoutManager;
 
+    public static Handler handler;
+
     private ServiceConnection serviceConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName name, IBinder service) {
@@ -67,7 +74,7 @@ public class ChatActivity extends AppCompatActivity {
         id = getIntent().getAction();
 
         final List<ChatMessage> chatMessages = new ArrayList<>();
-        DatabaseHelper databaseHelper = new DatabaseHelper(this, "miaochat.db", null, 1);
+        final DatabaseHelper databaseHelper = new DatabaseHelper(this, "miaochat.db", null, 1);
         SQLiteDatabase db = databaseHelper.getReadableDatabase();
         Cursor cursor = db.query("information", null, "inf_from = ? OR inf_to = ?", new String[]{id, id}, null, null, null); //怎么只查找前10条消息？
         Log.d("message", cursor.getCount() + "");
@@ -129,6 +136,37 @@ public class ChatActivity extends AppCompatActivity {
                 }
             }
         });
+
+        handler = new Handler() {
+            @Override
+            public void handleMessage(Message message) {
+                super.handleMessage(message);
+                ChatMessage chatMessage = (ChatMessage) message.obj;
+//                ContentValues values = new ContentValues();
+//                values.put("id", chatMessage.getId());
+//                values.put("inf_from", chatMessage.getFrom());
+//                values.put("inf_to", chatMessage.getTo());
+//                values.put("time", chatMessage.getTime());
+//                values.put("content", chatMessage.getContent());
+//                SQLiteDatabase db = databaseHelper.getWritableDatabase();
+//                db.insert("information", null, values);
+//                values.clear();
+                adapter.notifyItemInserted(adapter.getItemCount());
+                chatMessages.add(chatMessage);
+
+//                NotificationCompat.Builder builder = new NotificationCompat.Builder(getBaseContext());
+//                builder.setSmallIcon(R.mipmap.ic_launcher);
+//                builder.setContentTitle(chatMessage.getFrom());
+//                builder.setContentText(chatMessage.getContent());
+//                builder.setAutoCancel(true);
+//                Intent intent = new Intent(getBaseContext(), ChatActivity.class);
+//                intent.setAction(chatMessage.getFrom());
+//                PendingIntent pendingIntent = PendingIntent.getActivity(getBaseContext(), 0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+//                builder.setContentIntent(pendingIntent);
+//                NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+//                notificationManager.notify(0, builder.build());
+            }
+        };
     }
 
     @Override

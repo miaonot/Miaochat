@@ -1,7 +1,11 @@
 package com.miaonot.www.miaochat.utils;
 
+import android.app.ActivityManager;
+import android.os.Message;
 import android.util.Log;
 
+import com.miaonot.www.miaochat.activity.ChatActivity;
+import com.miaonot.www.miaochat.database.DatabaseHelper;
 import com.miaonot.www.miaochat.module.ChatMessage;
 import com.miaonot.www.miaochat.module.Friend;
 import com.miaonot.www.miaochat.module.HeartBeat;
@@ -30,6 +34,8 @@ public class SocketUtil {
     static final byte CLIENT_SEND_HEART_BEAT = 1;
     static final byte SERVER_RESPONSE_HEART_BEAT = 2;
     static final byte CLIENT_SEND_MESSAGE = 3;
+    static final byte CLIENT_RECV_MESSAGE = 5;
+    static final byte SERVER_SEND_MESSAGE = 6;
     static final byte CLIENT_REQUEST_FRIENDS = 7;
     static final byte SERVER_RESPONSE_FRIENDS = 8;
     private static final int CLIENT_REQUEST_LOGIN = 11;
@@ -222,7 +228,7 @@ public class SocketUtil {
                 int totalLen = 1 + 4 + b.length;
                 OutputStream out = socket.getOutputStream();
                 DataOutputStream outs = new DataOutputStream(out);
-                //发送心跳
+                //发送消息
                 outs.writeByte(CLIENT_SEND_MESSAGE);
                 outs.writeInt(totalLen);
                 outs.write(b);
@@ -237,7 +243,7 @@ public class SocketUtil {
     //客户端检验接收报文的类型并调用相应的处理方法
     private void findReceiveMsgType(byte type, String content)
     {
-
+        Log.d("receive", "Message received");
         if(type == SERVER_RESPONSE_HEART_BEAT) //服务器回应心跳包
         {
             handleServerHeartBeat(content);
@@ -246,10 +252,10 @@ public class SocketUtil {
 //        {
 //            handleServerResponseChatMessage(content);
 //        }
-//        else if(type == SERVER_SEND_MESSAGE) //服务器发送聊天记录
-//        {
-//            handleServerChatMessage(content);
-//        }
+        else if(type == SERVER_SEND_MESSAGE) //服务器发送聊天记录
+        {
+            handleServerChatMessage(content);
+        }
     }
 
     //处理服务器的心跳包
@@ -258,4 +264,43 @@ public class SocketUtil {
         Log.d("Heartbeat", "receive");
     }
 
+    //处理来自服务器的聊天记录
+    private void handleServerChatMessage(String content)
+    {
+        String[] msg = content.split("\n",5);
+        ChatMessage chatMessage = new ChatMessage(msg[0],msg[1],msg[2],msg[3],msg[4]);
+        sendConfirmMsg(chatMessage);
+        Message message = new Message();
+        message.obj = chatMessage;
+        if (ChatActivity.handler != null) {
+            ChatActivity.handler.sendMessage(message);
+        } else {
+            SocketService.handler.sendMessage(message);
+        }
+
+        //测试
+        Log.d("receive", chatMessage.getContent());
+    }
+
+    //客户端发送确认接收聊天记录的报文
+    private void sendConfirmMsg(ChatMessage message)
+    {
+        synchronized(lock)
+        {
+            try{
+                String msg = message.getId();
+                byte[] b = msg.getBytes("UTF-8");
+                int totalLen = 1 + 4 + b.length;
+                OutputStream out = socket.getOutputStream();
+                DataOutputStream outs = new DataOutputStream(out);
+                //发送报文
+                outs.writeByte(CLIENT_RECV_MESSAGE);
+                outs.writeInt(totalLen);
+                outs.write(b);
+            }
+            catch(IOException e){
+
+            }
+        }
+    }
 }
